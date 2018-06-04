@@ -1145,7 +1145,7 @@ Once you have completed the code implementation, document your results in a proj
 For an example of what feature map outputs look like, check out NVIDIA's results in their paper [End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/) in the section Visualization of internal CNN State. NVIDIA was able to show that their network's inner weights had high activations to road boundary lines by comparing feature maps from an image with a clear path to one without. Try experimenting with a similar test to show that your trained network's weights are looking for interesting features, whether it's looking at differences in feature maps from images with or without a sign, or even what feature maps look like in a trained network vs a completely untrained one on the same sign image.
 
 <figure>
- <img src="visualize_cnn.png" width="380" alt="Combined Image" />
+ <img src="../visualize_cnn.png" width="380" alt="Combined Image" />
  <figcaption>
  <p></p> 
  <p style="text-align: center;"> Your output should look something like this (above)</p> 
