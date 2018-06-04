@@ -112,17 +112,17 @@ My final model consisted of the following layers:
 
 #### 3. Model training
 
-To train the model, I used the Adam optimizer a batch size of `128` and `40` epochs. The following hyper-parameters were set:
+To train the model, I used the Adam optimizer a batch size of `128` and `60` epochs. The following hyper-parameters were set:
 
 - learning rate: `0.0005`
 - dropout keep probability: `0.5`
 - beta for L2 regularization: `0.0001` 
 
 To ensure the best possible model is choosen, the highest scoring model (accuracy on the validation set) was saved. 
-The number of epochs were sufficient between 30 and 40 and raising it did not lead to further gains. Lowering the learning rate ensured that the optimizer converged.
+The number of epochs were sufficient between 40 and 60 and raising it did not lead to further gains. Lowering the learning rate ensured that the optimizer converged.
 The beta for L2 regularization had to be set pretty low otherwise the training and validation accuracy would decrease. Dropout between 0.5 and 0.7 was equally good.
 
-#### 4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
+#### 4. Approach
 
 My final model results were:
 * training set accuracy of **0.995%**
