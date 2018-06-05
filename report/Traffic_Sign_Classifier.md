@@ -25,29 +25,36 @@ The [rubric](https://review.udacity.com/#!/rubrics/481/view) contains "Stand Out
 # Load pickled data
 import pickle
 import csv
+import os
 
-training_file = 'data/train.p'
-validation_file= 'data/valid.p'
-testing_file = 'data/test.p'
-signnames_file = 'signnames.csv'
+from keras.datasets import cifar10
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+# y_train.shape is 2d, (50000, 1). While Keras is smart enough to handle this
+# it's a good idea to flatten the array.
+y_train = y_train.reshape(-1)
+y_test = y_test.reshape(-1)
 
-with open(training_file, mode='rb') as f:
-    train = pickle.load(f)
-with open(validation_file, mode='rb') as f:
-    valid = pickle.load(f)
-with open(testing_file, mode='rb') as f:
-    test = pickle.load(f)
-    
-X_train, y_train = train['features'], train['labels']
-X_valid, y_valid = valid['features'], valid['labels']
-X_test, y_test = test['features'], test['labels']
+# load label names to use in prediction results
+label_list_path = 'datasets/cifar-10-batches-py/batches.meta'
 
-# Load labels
-sign_labels = []
-with open(signnames_file, mode='r') as f:
-    csv_contents = csv.reader(f, delimiter=',')
-    sign_labels = [row[1] for row in csv_contents][1:]
+keras_dir = os.path.expanduser(os.path.join('~', '.keras'))
+datadir_base = os.path.expanduser(keras_dir)
+if not os.access(datadir_base, os.W_OK):
+    datadir_base = os.spath.join('/tmp', '.keras')
+label_list_path = os.path.join(datadir_base, label_list_path)
+
+with open(label_list_path, mode='rb') as f:
+    labels = pickle.load(f)['label_names']
+print("Loaded label names from %s" % label_list_path)
 ```
+
+    Using TensorFlow backend.
+
+
+    Downloading data from http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+    Untaring file...
+    Loaded label names from /home/carnd/.keras/datasets/cifar-10-batches-py/batches.meta
+
 
 ---
 
@@ -74,28 +81,20 @@ import numpy as np
 # TODO: Number of training examples
 n_train = X_train.shape[0]
 
-# TODO: Number of validation examples
-n_validation = X_valid.shape[0]
-
 # TODO: Number of testing examples.
 n_test = X_test.shape[0]
-
-# TODO: What's the shape of an traffic sign image?
-image_shape = X_valid.shape[1:4]
 
 # TODO: How many unique classes/labels there are in the dataset.
 n_classes = len(np.unique(y_train))
 
 print("Number of training examples =", n_train)
 print("Number of testing examples =", n_test)
-print("Image data shape =", image_shape)
 print("Number of classes =", n_classes)
 ```
 
-    Number of training examples = 34799
-    Number of testing examples = 12630
-    Image data shape = (32, 32, 3)
-    Number of classes = 43
+    Number of training examples = 50000
+    Number of testing examples = 10000
+    Number of classes = 10
 
 
 ### Include an exploratory visualization of the dataset
@@ -122,7 +121,7 @@ def get_examples_per_class():
     for i in range(1, len(indices) + 1):
         img = X_train[indices[i - 1]]
         label = y_train[indices[i - 1]]
-        label_string = sign_labels[label]
+        label_string = labels[label]
         examples.append([img, label, label_string])
     
     return examples
@@ -132,7 +131,7 @@ def show_class_examples(examples_per_class):
     columns = 5
     rows = np.ceil(len(examples_per_class)/columns)
 
-    fig = plt.figure(figsize = (20,30));
+    fig = plt.figure(figsize = (columns * 4, rows * 2));
     plt.title("Training classes examples")
     plt.axis('off')
     plt.subplots_adjust(top=2)
@@ -145,7 +144,7 @@ def show_class_examples(examples_per_class):
         plt.title("{0} - {1}".format(label, label_string))
         ax.imshow(img) if img.shape[2] == 3 else ax.imshow(img[:,:,0], cmap='gray')
         ax.axis('off')
-    fig.tight_layout()
+#     fig.tight_layout()
     
         
 def plot_examples_per_class(y, title):
@@ -161,7 +160,6 @@ def plot_examples_per_class(y, title):
 examples_per_class = get_examples_per_class()
 show_class_examples(examples_per_class)
 plot_examples_per_class(y_train, "Training classes: counts")
-plot_examples_per_class(y_valid, "Validation classes: counts")
 ```
 
 
@@ -170,10 +168,6 @@ plot_examples_per_class(y_valid, "Validation classes: counts")
 
 
 ![png](output_8_1.png)
-
-
-
-![png](output_8_2.png)
 
 
 ----
@@ -213,78 +207,78 @@ import scipy
 import numpy as np
 from skimage.transform import warp, AffineTransform
 
-def rotate_image(image, angle=10):
-    return scipy.ndimage.rotate(image, random.randint(-angle,angle), reshape=False)
+# def rotate_image(image, angle=10):
+#     return scipy.ndimage.rotate(image, random.randint(-angle,angle), reshape=False)
 
-def shear_image(image):
-    shear = random.randint(1,2) / 10
-    tform = AffineTransform(shear=shear)
-    return warp(image, tform, preserve_range=True).astype(int)
+# def shear_image(image):
+#     shear = random.randint(1,2) / 10
+#     tform = AffineTransform(shear=shear)
+#     return warp(image, tform, preserve_range=True).astype(int)
 
-def scale_image(image):
-    sx = 1 - random.randint(1,2) / 10
-    sy = 1 - random.randint(1,2) / 10
-    tform = AffineTransform(scale=(sx, sy))
-    return warp(image, tform, preserve_range=True).astype(int)
+# def scale_image(image):
+#     sx = 1 - random.randint(1,2) / 10
+#     sy = 1 - random.randint(1,2) / 10
+#     tform = AffineTransform(scale=(sx, sy))
+#     return warp(image, tform, preserve_range=True).astype(int)
 
-def translate_image(image):
-    tx = random.randint(0,3)
-    ty = random.randint(0,3)
-    tform = AffineTransform(translation=(tx, ty))
-    return warp(image, tform, preserve_range=True).astype(int)
+# def translate_image(image):
+#     tx = random.randint(0,3)
+#     ty = random.randint(0,3)
+#     tform = AffineTransform(translation=(tx, ty))
+#     return warp(image, tform, preserve_range=True).astype(int)
 
-def transform_image(image):
-    transformations = {
-        0: rotate_image,
-        1: shear_image,
-        2: scale_image,
-        3: translate_image
-    }
-    return transformations[random.randint(0, len(transformations) - 1)](image)
+# def transform_image(image):
+#     transformations = {
+#         0: rotate_image,
+#         1: shear_image,
+#         2: scale_image,
+#         3: translate_image
+#     }
+#     return transformations[random.randint(0, len(transformations) - 1)](image)
 
-# level the numbers per class
-new_trainX = []
-new_trainY = []
-target_size = 4000
-max_size = target_size
+# # level the numbers per class
+# new_trainX = []
+# new_trainY = []
+# target_size = 4000
+# max_size = target_size
 
-def extend_image_set(samples):
-    expanded = []
-    expanded.extend(samples)
+# def extend_image_set(samples):
+#     expanded = []
+#     expanded.extend(samples)
 
-    sample_size = len(samples)
-    new_size = sample_size
-    while True:
-        for image in samples:
-            expanded.append(transform_image(image))
-            new_size += 1
-            if  new_size >= target_size:
-                return expanded
+#     sample_size = len(samples)
+#     new_size = sample_size
+#     while True:
+#         for image in samples:
+#             expanded.append(transform_image(image))
+#             new_size += 1
+#             if  new_size >= target_size:
+#                 return expanded
 
-sys.stdout.write("Processing images for class: ")
+# sys.stdout.write("Processing images for class: ")
 
-# Concatenate train and validation sets
-X_train = np.concatenate((X_train, X_valid))
-y_train = np.concatenate((y_train, y_valid))
+# # Concatenate train and validation sets
+# X_train = np.concatenate((X_train, X_valid))
+# y_train = np.concatenate((y_train, y_valid))
 
-# Augment data
-for i in range(0,43):
-    sys.stdout.write("{0}..".format(i))
-    samples = X_train[np.where(y_train == i)]
-    sample_size = samples.shape[0]
-    if (sample_size < target_size):
-        samples = np.array(extend_image_set(samples))
-    elif (sample_size > max_size):
-        samples = samples[0:max_size]
-    new_trainY.append(np.full((samples.shape[0]), i).flatten())
-    new_trainX.append(samples)
+# # Augment data
+# for i in range(0,43):
+#     sys.stdout.write("{0}..".format(i))
+#     samples = X_train[np.where(y_train == i)]
+#     sample_size = samples.shape[0]
+#     if (sample_size < target_size):
+#         samples = np.array(extend_image_set(samples))
+#     elif (sample_size > max_size):
+#         samples = samples[0:max_size]
+#     new_trainY.append(np.full((samples.shape[0]), i).flatten())
+#     new_trainX.append(samples)
     
-sys.stdout.write('done\n')
-sys.stdout.flush()
+# sys.stdout.write('done\n')
+# sys.stdout.flush()
 
-new_sample_length = sum([len(x) for x in new_trainX])
-y_train = np.concatenate(new_trainY)
-X_train = np.concatenate(new_trainX)
+# new_sample_length = sum([len(x) for x in new_trainX])
+# y_train = np.concatenate(new_trainY)
+# X_train = np.concatenate(new_trainX)
 
 # Split train and validation sets
 from sklearn.utils import shuffle
@@ -298,15 +292,12 @@ plot_examples_per_class(y_train, "Training classes: new counts")
 plot_examples_per_class(y_valid, "Validation classes: new counts")
 ```
 
-    Processing images for class: 0..1..2..3..4..5..6..7..8..9..10..11..12..13..14..15..16..17..18..19..20..21..22..23..24..25..26..27..28..29..30..31..32..33..34..35..36..37..38..39..40..41..42..done
+
+![png](output_12_0.png)
 
 
 
 ![png](output_12_1.png)
-
-
-
-![png](output_12_2.png)
 
 
 
@@ -393,9 +384,9 @@ def model(x, keep_prob):
     fc3 = tf.nn.relu(fc3, name='fc3')
     fc3 = tf.nn.dropout(fc3, keep_prob)
 
-    # Layer 6: Fully Connected. Input = 84. Output = 43.
-    fc4_W = tf.Variable(tf.truncated_normal(shape=(84, 43), mean = mu, stddev = sigma))
-    fc4_b = tf.Variable(tf.zeros(43))
+    # Layer 6: Fully Connected. Input = 84. Output = 10.
+    fc4_W = tf.Variable(tf.truncated_normal(shape=(84, 10), mean = mu, stddev = sigma))
+    fc4_b = tf.Variable(tf.zeros(10))
     logits = tf.matmul(fc3, fc4_W) + fc4_b
 
     return logits, tf.nn.l2_loss(conv1_W) + tf.nn.l2_loss(conv2_W) + tf.nn.l2_loss(fc1_W) + tf.nn.l2_loss(fc2_W) + tf.nn.l2_loss(fc3_W) + tf.nn.l2_loss(fc4_W)
@@ -427,7 +418,7 @@ BETA = 0.0001 # Beta for L2 regularization <- todo lower factor 10
 x = tf.placeholder(tf.float32, (None, 32, 32, 1))
 y = tf.placeholder(tf.int32, (None))
 keep_prob = tf.placeholder(tf.float32)
-one_hot_y = tf.one_hot(y, 43)
+one_hot_y = tf.one_hot(y, 10)
 
 # Training pipeline
 rate = 0.0005
@@ -499,394 +490,394 @@ with tf.Session() as sess:
     EPOCH 1
     Training...
     Evaluating...
-    Training Accuracy = 0.619
-    Validation Accuracy = 0.618
+    Training Accuracy = 0.333
+    Validation Accuracy = 0.335
     Model saved
     
     EPOCH 2
     Training...
     Evaluating...
-    Training Accuracy = 0.792
-    Validation Accuracy = 0.788
+    Training Accuracy = 0.399
+    Validation Accuracy = 0.401
     Model saved
     
     EPOCH 3
     Training...
     Evaluating...
-    Training Accuracy = 0.856
-    Validation Accuracy = 0.851
+    Training Accuracy = 0.434
+    Validation Accuracy = 0.432
     Model saved
     
     EPOCH 4
     Training...
     Evaluating...
-    Training Accuracy = 0.897
-    Validation Accuracy = 0.891
+    Training Accuracy = 0.461
+    Validation Accuracy = 0.453
     Model saved
     
     EPOCH 5
     Training...
     Evaluating...
-    Training Accuracy = 0.916
-    Validation Accuracy = 0.909
+    Training Accuracy = 0.480
+    Validation Accuracy = 0.466
     Model saved
     
     EPOCH 6
     Training...
     Evaluating...
-    Training Accuracy = 0.923
-    Validation Accuracy = 0.915
+    Training Accuracy = 0.499
+    Validation Accuracy = 0.479
     Model saved
     
     EPOCH 7
     Training...
     Evaluating...
-    Training Accuracy = 0.937
-    Validation Accuracy = 0.931
+    Training Accuracy = 0.512
+    Validation Accuracy = 0.494
     Model saved
     
     EPOCH 8
     Training...
     Evaluating...
-    Training Accuracy = 0.946
-    Validation Accuracy = 0.940
+    Training Accuracy = 0.529
+    Validation Accuracy = 0.508
     Model saved
     
     EPOCH 9
     Training...
     Evaluating...
-    Training Accuracy = 0.953
-    Validation Accuracy = 0.948
+    Training Accuracy = 0.544
+    Validation Accuracy = 0.516
     Model saved
     
     EPOCH 10
     Training...
     Evaluating...
-    Training Accuracy = 0.957
-    Validation Accuracy = 0.950
+    Training Accuracy = 0.554
+    Validation Accuracy = 0.527
     Model saved
     
     EPOCH 11
     Training...
     Evaluating...
-    Training Accuracy = 0.963
-    Validation Accuracy = 0.956
-    Model saved
+    Training Accuracy = 0.560
+    Validation Accuracy = 0.527
     
     EPOCH 12
     Training...
     Evaluating...
-    Training Accuracy = 0.967
-    Validation Accuracy = 0.960
+    Training Accuracy = 0.568
+    Validation Accuracy = 0.528
     Model saved
     
     EPOCH 13
     Training...
     Evaluating...
-    Training Accuracy = 0.975
-    Validation Accuracy = 0.969
+    Training Accuracy = 0.583
+    Validation Accuracy = 0.548
     Model saved
     
     EPOCH 14
     Training...
     Evaluating...
-    Training Accuracy = 0.975
-    Validation Accuracy = 0.967
+    Training Accuracy = 0.584
+    Validation Accuracy = 0.545
     
     EPOCH 15
     Training...
     Evaluating...
-    Training Accuracy = 0.979
-    Validation Accuracy = 0.971
+    Training Accuracy = 0.598
+    Validation Accuracy = 0.556
     Model saved
     
     EPOCH 16
     Training...
     Evaluating...
-    Training Accuracy = 0.980
-    Validation Accuracy = 0.973
+    Training Accuracy = 0.611
+    Validation Accuracy = 0.559
     Model saved
     
     EPOCH 17
     Training...
     Evaluating...
-    Training Accuracy = 0.983
-    Validation Accuracy = 0.976
-    Model saved
+    Training Accuracy = 0.615
+    Validation Accuracy = 0.559
     
     EPOCH 18
     Training...
     Evaluating...
-    Training Accuracy = 0.984
-    Validation Accuracy = 0.977
+    Training Accuracy = 0.611
+    Validation Accuracy = 0.562
     Model saved
     
     EPOCH 19
     Training...
     Evaluating...
-    Training Accuracy = 0.985
-    Validation Accuracy = 0.977
+    Training Accuracy = 0.628
+    Validation Accuracy = 0.571
     Model saved
     
     EPOCH 20
     Training...
     Evaluating...
-    Training Accuracy = 0.986
-    Validation Accuracy = 0.979
+    Training Accuracy = 0.630
+    Validation Accuracy = 0.571
     Model saved
     
     EPOCH 21
     Training...
     Evaluating...
-    Training Accuracy = 0.986
-    Validation Accuracy = 0.979
+    Training Accuracy = 0.642
+    Validation Accuracy = 0.573
     Model saved
     
     EPOCH 22
     Training...
     Evaluating...
-    Training Accuracy = 0.988
-    Validation Accuracy = 0.981
+    Training Accuracy = 0.647
+    Validation Accuracy = 0.579
     Model saved
     
     EPOCH 23
     Training...
     Evaluating...
-    Training Accuracy = 0.987
-    Validation Accuracy = 0.980
+    Training Accuracy = 0.654
+    Validation Accuracy = 0.581
+    Model saved
     
     EPOCH 24
     Training...
     Evaluating...
-    Training Accuracy = 0.990
-    Validation Accuracy = 0.982
-    Model saved
+    Training Accuracy = 0.654
+    Validation Accuracy = 0.580
     
     EPOCH 25
     Training...
     Evaluating...
-    Training Accuracy = 0.987
-    Validation Accuracy = 0.980
+    Training Accuracy = 0.659
+    Validation Accuracy = 0.586
+    Model saved
     
     EPOCH 26
     Training...
     Evaluating...
-    Training Accuracy = 0.990
-    Validation Accuracy = 0.982
-    Model saved
+    Training Accuracy = 0.663
+    Validation Accuracy = 0.585
     
     EPOCH 27
     Training...
     Evaluating...
-    Training Accuracy = 0.989
-    Validation Accuracy = 0.982
+    Training Accuracy = 0.674
+    Validation Accuracy = 0.589
+    Model saved
     
     EPOCH 28
     Training...
     Evaluating...
-    Training Accuracy = 0.991
-    Validation Accuracy = 0.983
-    Model saved
+    Training Accuracy = 0.670
+    Validation Accuracy = 0.589
     
     EPOCH 29
     Training...
     Evaluating...
-    Training Accuracy = 0.990
-    Validation Accuracy = 0.983
+    Training Accuracy = 0.683
+    Validation Accuracy = 0.598
+    Model saved
     
     EPOCH 30
     Training...
     Evaluating...
-    Training Accuracy = 0.990
-    Validation Accuracy = 0.982
+    Training Accuracy = 0.683
+    Validation Accuracy = 0.600
+    Model saved
     
     EPOCH 31
     Training...
     Evaluating...
-    Training Accuracy = 0.991
-    Validation Accuracy = 0.983
-    Model saved
+    Training Accuracy = 0.683
+    Validation Accuracy = 0.596
     
     EPOCH 32
     Training...
     Evaluating...
-    Training Accuracy = 0.991
-    Validation Accuracy = 0.984
-    Model saved
+    Training Accuracy = 0.691
+    Validation Accuracy = 0.598
     
     EPOCH 33
     Training...
     Evaluating...
-    Training Accuracy = 0.992
-    Validation Accuracy = 0.984
-    Model saved
+    Training Accuracy = 0.698
+    Validation Accuracy = 0.599
     
     EPOCH 34
     Training...
     Evaluating...
-    Training Accuracy = 0.992
-    Validation Accuracy = 0.985
-    Model saved
+    Training Accuracy = 0.702
+    Validation Accuracy = 0.598
     
     EPOCH 35
     Training...
     Evaluating...
-    Training Accuracy = 0.993
-    Validation Accuracy = 0.986
+    Training Accuracy = 0.703
+    Validation Accuracy = 0.601
     Model saved
     
     EPOCH 36
     Training...
     Evaluating...
-    Training Accuracy = 0.993
-    Validation Accuracy = 0.985
+    Training Accuracy = 0.706
+    Validation Accuracy = 0.602
+    Model saved
     
     EPOCH 37
     Training...
     Evaluating...
-    Training Accuracy = 0.992
-    Validation Accuracy = 0.985
+    Training Accuracy = 0.706
+    Validation Accuracy = 0.604
+    Model saved
     
     EPOCH 38
     Training...
     Evaluating...
-    Training Accuracy = 0.992
-    Validation Accuracy = 0.985
+    Training Accuracy = 0.711
+    Validation Accuracy = 0.602
     
     EPOCH 39
     Training...
     Evaluating...
-    Training Accuracy = 0.993
-    Validation Accuracy = 0.985
+    Training Accuracy = 0.721
+    Validation Accuracy = 0.604
     
     EPOCH 40
     Training...
     Evaluating...
-    Training Accuracy = 0.994
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.721
+    Validation Accuracy = 0.606
     Model saved
     
     EPOCH 41
     Training...
     Evaluating...
-    Training Accuracy = 0.994
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.725
+    Validation Accuracy = 0.601
     
     EPOCH 42
     Training...
     Evaluating...
-    Training Accuracy = 0.994
-    Validation Accuracy = 0.986
+    Training Accuracy = 0.730
+    Validation Accuracy = 0.604
     
     EPOCH 43
     Training...
     Evaluating...
-    Training Accuracy = 0.993
-    Validation Accuracy = 0.985
+    Training Accuracy = 0.733
+    Validation Accuracy = 0.612
+    Model saved
     
     EPOCH 44
     Training...
     Evaluating...
-    Training Accuracy = 0.993
-    Validation Accuracy = 0.985
+    Training Accuracy = 0.719
+    Validation Accuracy = 0.599
     
     EPOCH 45
     Training...
     Evaluating...
-    Training Accuracy = 0.994
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.731
+    Validation Accuracy = 0.605
     
     EPOCH 46
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
-    Model saved
+    Training Accuracy = 0.743
+    Validation Accuracy = 0.612
     
     EPOCH 47
     Training...
     Evaluating...
-    Training Accuracy = 0.994
-    Validation Accuracy = 0.986
+    Training Accuracy = 0.740
+    Validation Accuracy = 0.611
     
     EPOCH 48
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.988
-    Model saved
+    Training Accuracy = 0.735
+    Validation Accuracy = 0.599
     
     EPOCH 49
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.744
+    Validation Accuracy = 0.605
     
     EPOCH 50
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.753
+    Validation Accuracy = 0.615
+    Model saved
     
     EPOCH 51
     Training...
     Evaluating...
-    Training Accuracy = 0.994
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.744
+    Validation Accuracy = 0.608
     
     EPOCH 52
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.756
+    Validation Accuracy = 0.612
     
     EPOCH 53
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.752
+    Validation Accuracy = 0.611
     
     EPOCH 54
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.988
+    Training Accuracy = 0.762
+    Validation Accuracy = 0.613
     
     EPOCH 55
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.750
+    Validation Accuracy = 0.610
     
     EPOCH 56
     Training...
     Evaluating...
-    Training Accuracy = 0.996
-    Validation Accuracy = 0.988
+    Training Accuracy = 0.758
+    Validation Accuracy = 0.616
+    Model saved
     
     EPOCH 57
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.761
+    Validation Accuracy = 0.613
     
     EPOCH 58
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.988
+    Training Accuracy = 0.762
+    Validation Accuracy = 0.619
+    Model saved
     
     EPOCH 59
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.767
+    Validation Accuracy = 0.611
     
     EPOCH 60
     Training...
     Evaluating...
-    Training Accuracy = 0.995
-    Validation Accuracy = 0.987
+    Training Accuracy = 0.769
+    Validation Accuracy = 0.613
     
 
 
@@ -911,332 +902,7 @@ with tf.Session() as sess:
     print("Test accuracy: ", evaluate(X_test, y_test))
 ```
 
-    Test accuracy:  0.944655581797
-
-
----
-
-## Step 3: Test a Model on New Images
-
-To give yourself more insight into how your model is working, download at least five pictures of German traffic signs from the web and use your model to predict the traffic sign type.
-
-You may find `signnames.csv` useful as it contains mappings from the class id (integer) to the actual sign name.
-
-### Load and Output the Images
-
-
-```python
-### Load the images and plot them here.
-### Feel free to use as many code cells as needed.
-from os import listdir
-from os.path import isfile, join
-from PIL import Image
-
-def resize(img):
-    IMG_SIZE = 32, 32
-    width, height = img.size
-
-    if width > height:
-        delta = width - height
-        left = int(delta/2)
-        upper = 0
-        right = height + left
-        lower = height
-    else:
-        delta = height - width
-        left = 0
-        upper = int(delta/2)
-        right = width
-        lower = width + upper
-
-    img = img.crop((left, upper, right, lower)).convert(mode='RGB')
-    img.thumbnail(IMG_SIZE, Image.ANTIALIAS)
-    return img
-
-# Load file names
-img_path = './german_sign_examples'
-files = [img for img in [join(img_path, f) for f in listdir(img_path)] if isfile(img) and img.endswith(".png")]
-
-# Load images and convert to RGB 32x32
-adjusted_images = [resize(Image.open(img)) for img in files]
-
-# Pre-process image for cnn
-preprocessed_images = preprocess(np.array([np.array(image) for image in adjusted_images]))
-
-```
-
-### Predict the Sign Type for Each Image
-
-
-```python
-### Run the predictions here and use the model to output the prediction for each image.
-### Make sure to pre-process the images with the same pre-processing pipeline used earlier.
-### Feel free to use as many code cells as needed.
-import re
-
-def plot_prediction_results(predictions):
-    predictions = np.argmax(predictions_per_logit, axis=1)
-    
-    columns = 2
-    rows = len(files)
-
-    fig = plt.figure(figsize = (20,30));
-    plt.title("Predictions")
-    plt.axis('off')
-    plt.subplots_adjust(top=2)
-    
-    for i in range(0, len(predictions) * 2, columns):    
-        ax = fig.add_subplot(rows, columns, i + 1)
-        plt.title("Input image ({0})".format(re.search('/(\d*)\.', files[i//2]).group(1)))
-        ax.imshow(adjusted_images[i // 2])
-        ax.axis('off')
-        
-        example = examples_per_class[predictions[i // 2]]
-        img = example[0]
-        label = example[1]
-        label_string = example[2]
-        
-        ax = fig.add_subplot(rows, columns, i + 2)
-        plt.title("{0} - {1}".format(label, label_string))
-        ax.imshow(img)
-        ax.axis('off')
-
-predictions = []
-predictions_per_logit = None
-with tf.Session() as sess:
-    saver.restore(sess, "./model")
-    predictions_per_logit = sess.run(logits, feed_dict={x: preprocessed_images, keep_prob: 1})
-    predictions = np.argmax(predictions_per_logit, axis=1)
-    plot_prediction_results(predictions)
-```
-
-
-![png](output_25_0.png)
-
-
-### Analyze Performance
-
-
-```python
-### Calculate the accuracy for these 5 new images. 
-### For example, if the model predicted 1 out of 5 signs correctly, it's 20% accurate on these new images.
-
-# File names indicate the actual class
-actuals = [int(re.search('/(\d*)\.', file).group(1)) for file in files]
-
-print("Accuracy: {0}%".format(len([(a, b) for (a,b) in zip(actuals, predictions) if a == b]) / len(actuals) * 100))
-```
-
-    Accuracy: 100.0%
-
-
-### Output Top 5 Softmax Probabilities For Each Image Found on the Web
-
-For each of the new images, print out the model's softmax probabilities to show the **certainty** of the model's predictions (limit the output to the top 5 probabilities for each image). [`tf.nn.top_k`](https://www.tensorflow.org/versions/r0.12/api_docs/python/nn.html#top_k) could prove helpful here. 
-
-The example below demonstrates how tf.nn.top_k can be used to find the top k predictions for each image.
-
-`tf.nn.top_k` will return the values and indices (class ids) of the top k predictions. So if k=3, for each sign, it'll return the 3 largest probabilities (out of a possible 43) and the correspoding class ids.
-
-Take this numpy array as an example. The values in the array represent predictions. The array contains softmax probabilities for five candidate images with six possible classes. `tf.nn.top_k` is used to choose the three classes with the highest probability:
-
-```
-# (5, 6) array
-a = np.array([[ 0.24879643,  0.07032244,  0.12641572,  0.34763842,  0.07893497,
-         0.12789202],
-       [ 0.28086119,  0.27569815,  0.08594638,  0.0178669 ,  0.18063401,
-         0.15899337],
-       [ 0.26076848,  0.23664738,  0.08020603,  0.07001922,  0.1134371 ,
-         0.23892179],
-       [ 0.11943333,  0.29198961,  0.02605103,  0.26234032,  0.1351348 ,
-         0.16505091],
-       [ 0.09561176,  0.34396535,  0.0643941 ,  0.16240774,  0.24206137,
-         0.09155967]])
-```
-
-Running it through `sess.run(tf.nn.top_k(tf.constant(a), k=3))` produces:
-
-```
-TopKV2(values=array([[ 0.34763842,  0.24879643,  0.12789202],
-       [ 0.28086119,  0.27569815,  0.18063401],
-       [ 0.26076848,  0.23892179,  0.23664738],
-       [ 0.29198961,  0.26234032,  0.16505091],
-       [ 0.34396535,  0.24206137,  0.16240774]]), indices=array([[3, 0, 5],
-       [0, 1, 4],
-       [0, 5, 1],
-       [1, 3, 5],
-       [1, 4, 3]], dtype=int32))
-```
-
-Looking just at the first row we get `[ 0.34763842,  0.24879643,  0.12789202]`, you can confirm these are the 3 largest probabilities in `a`. You'll also notice `[3, 0, 5]` are the corresponding indices.
-
-
-```python
-### Print out the top five softmax probabilities for the predictions on the German traffic sign images found on the web. 
-### Feel free to use as many code cells as needed.
-
-K = 5
-with tf.Session() as sess:
-    saver.restore(sess, "./model")
-    predictions_per_logit_softmax = tf.nn.softmax(predictions_per_logit)
-    topK = sess.run(tf.nn.top_k(predictions_per_logit_softmax, k=K))
-    
-    
-    fig = plt.figure(figsize = (20,30));
-    plt.axis('off')
-    plt.subplots_adjust(top=2)
-    
-    rows = len(files)
-    columns = 2
-    
-    
-    for i in range(len(files)):
-        classes = []
-        percentages = []
-        for j in range(K):
-            percentages.append(topK[0][i][j] * 100)
-            label = topK[1][i][j]
-            label_string = sign_labels[label]
-            classes.append("{0} ({1})".format(label_string, label))
-            
-        ax = fig.add_subplot(rows, columns, i * 2 + 1)
-
-        y_pos = np.arange(K)
-        
-        for k, v in enumerate(percentages):
-            ax.text(v + 3 if v < 80 else 80, k, "{:.5f}%".format(v), color='blue', fontweight='bold')
-
-        ax.barh(y_pos, percentages, align='center', color='green', ecolor='black')
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(classes)
-        ax.invert_yaxis()
-        ax.set_xlabel('Percentage')
-#         ax.set_ylabel('Class')
-        label = int(re.search('.*/(\d*).*', files[i]).group(1))
-        label_string = sign_labels[label]
-        ax.set_title("{0} ({1})".format(label_string, label))
-        
-        
-        ax = fig.add_subplot(rows, columns, i * 2 + 2)
-        ax.set_title(re.search('.*/(.*)', files[i]).group(1))
-        ax.imshow(adjusted_images[i])
-        ax.axis('off')
-```
-
-
-![png](output_30_0.png)
-
-
-## Project Writeup
-
-Once you have completed the code implementation, document your results in a project writeup using this [template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) as a guide. The writeup can be in a markdown or pdf file. 
-
-> **Note**: Once you have completed all of the code implementations and successfully answered each question above, you may finalize your work by exporting the iPython Notebook as an HTML document. You can do this by using the menu above and navigating to  \n",
-    "**File -> Download as -> HTML (.html)**. Include the finished document along with this notebook as your submission.
-
----
-
-## Step 4 (Optional): Visualize the Neural Network's State with Test Images
-
- This Section is not required to complete but acts as an additional excersise for understaning the output of a neural network's weights. While neural networks can be a great learning device they are often referred to as a black box. We can understand what the weights of a neural network look like better by plotting their feature maps. After successfully training your neural network you can see what it's feature maps look like by plotting the output of the network's weight layers in response to a test stimuli image. From these plotted feature maps, it's possible to see what characteristics of an image the network finds interesting. For a sign, maybe the inner network feature maps react with high activation to the sign's boundary outline or to the contrast in the sign's painted symbol.
-
- Provided for you below is the function code that allows you to get the visualization output of any tensorflow weight layer you want. The inputs to the function should be a stimuli image, one used during training or a new one you provided, and then the tensorflow variable name that represents the layer's state during the training process, for instance if you wanted to see what the [LeNet lab's](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/6df7ae49-c61c-4bb2-a23e-6527e69209ec/lessons/601ae704-1035-4287-8b11-e2c2716217ad/concepts/d4aca031-508f-4e0b-b493-e7b706120f81) feature maps looked like for it's second convolutional layer you could enter conv2 as the tf_activation variable.
-
-For an example of what feature map outputs look like, check out NVIDIA's results in their paper [End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/) in the section Visualization of internal CNN State. NVIDIA was able to show that their network's inner weights had high activations to road boundary lines by comparing feature maps from an image with a clear path to one without. Try experimenting with a similar test to show that your trained network's weights are looking for interesting features, whether it's looking at differences in feature maps from images with or without a sign, or even what feature maps look like in a trained network vs a completely untrained one on the same sign image.
-
-<figure>
- <img src="../visualize_cnn.png" width="380" alt="Combined Image" />
- <figcaption>
- <p></p> 
- <p style="text-align: center;"> Your output should look something like this (above)</p> 
- </figcaption>
-</figure>
- <p></p> 
-
-
-
-```python
-### Visualize your network's feature maps here.
-### Feel free to use as many code cells as needed.
-
-# image_input: the test image being fed into the network to produce the feature maps
-# tf_activation: should be a tf variable name used during your training procedure that represents the calculated state of a specific weight layer
-# activation_min/max: can be used to view the activation contrast in more detail, by default matplot sets min and max to the actual min and max values of the output
-# plt_num: used to plot out multiple different weight feature map sets on the same block, just extend the plt number for each new feature map entry
-
-def outputFeatureMap(image_input, tf_activation, activation_min=-1, activation_max=-1 ,plt_num=1, title=""):
-    # Here make sure to preprocess your image_input in a way your network expects
-    # with size, normalization, ect if needed
-    # image_input =
-    # Note: x should be the same name as your network's tensorflow data placeholder variable
-    # If you get an error tf_activation is not defined it may be having trouble accessing the variable from inside a function
-    activation = tf_activation.eval(session=sess, feed_dict={x : image_input, keep_prob:1})
-    featuremaps = activation.shape[3]
-
-    columns = 8
-    rows = math.ceil(featuremaps / columns)
-    fig = plt.figure(plt_num, figsize=(columns * 2, rows * 2))
-    plt.title(title, fontdict={'fontweight':'bold'}, loc='left', y=1.08)
-    plt.axis('off')
-    
-    for featuremap in range(featuremaps):
-        ax = fig.add_subplot(rows, columns, featuremap + 1) # sets the number of feature maps to show on each row and column
-        plt.title('FeatureMap ' + str(featuremap)) # displays the feature map number
-        if activation_min != -1 & activation_max != -1:
-            ax.imshow(activation[0,:,:, featuremap], interpolation="nearest", vmin =activation_min, vmax=activation_max, cmap="gray")
-        elif activation_max != -1:
-            ax.imshow(activation[0,:,:, featuremap], interpolation="nearest", vmax=activation_max, cmap="gray")
-        elif activation_min !=-1:
-            ax.imshow(activation[0,:,:, featuremap], interpolation="nearest", vmin=activation_min, cmap="gray")
-        else:
-            ax.imshow(activation[0,:,:, featuremap], interpolation="nearest", cmap="gray")
-#     fig.tight_layout()
-```
-
-
-```python
-with tf.Session() as sess:
-    saver.restore(sess, "./model")
-    names = ['conv1_0:0', 'conv1_1:0', 'conv1_2:0', 'conv2_0:0', 'conv2_1:0', 'conv2_2:0']
-
-    input_img = preprocessed_images[1:2,:,:,:]
-    
-    fig = plt.figure(0, figsize=(2, 2))
-    plt.title("Input", fontdict={'fontweight':'bold'}, loc='left', y=1.08)
-    plt.axis('off')
-    plt.imshow(input_img[0,:,:,0], cmap="gray")
-    
-    for i, name in enumerate(names):
-        tensor = sess.graph.get_tensor_by_name(name)
-        outputFeatureMap(input_img, tensor, plt_num=i + 1, title=name)
-```
-
-
-![png](output_35_0.png)
-
-
-
-![png](output_35_1.png)
-
-
-
-![png](output_35_2.png)
-
-
-
-![png](output_35_3.png)
-
-
-
-![png](output_35_4.png)
-
-
-
-![png](output_35_5.png)
-
-
-
-![png](output_35_6.png)
+    Test accuracy:  0.6134
 
 
 
