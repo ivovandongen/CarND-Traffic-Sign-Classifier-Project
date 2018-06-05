@@ -9,4 +9,4 @@ Training Accuracy = 0.762
 Validation Accuracy = 0.619
 Test Accuracy = 0.613
 
-[png](report/output_19_0.png)
+![png](report/output_19_0.png)
